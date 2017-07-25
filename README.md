@@ -26,6 +26,7 @@ This ratio is applied to every frame.
 * `resize`: Same as `scale`; however, each frame is resized to the exact size,
 instead of being scaled.
 * `files`: A `Map` of `String`s to atlas definitions.
+* `extension`: The output image extension. Default: `png`. Supports `jpg`, `jpeg`, `gif`, and `tga`.
 
 ### Atlas Definitions
 * `frames`: A `List` of Strings representing files to be combined. Supports globbing.
