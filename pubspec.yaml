@@ -1,5 +1,5 @@
 name: texture_atlas_transformer
-version: 1.0.0
+version: 1.0.1
 description: A Pub transformer to build Texture Atlas JSON files.
 author: Tobe O <thosakwe@gmail.com>
 homepage: https://github.com/thosakwe/texture_atlas_transformer

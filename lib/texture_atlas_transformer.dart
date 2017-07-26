@@ -36,8 +36,15 @@ class TextureAtlasTransformer extends AggregateTransformer {
   @override
   apply(AggregateTransform transform) async {
     var inputs = await transform.primaryInputs.toList();
-    Map<String, dynamic> atlasJson = {'name': transform.key};
+    var outputPath = '${transform.key}.json';
+    if (_settings.outputDir != null)
+      outputPath = p.url.join(_settings.outputDir, outputPath);
+    var imagePath = outputPath.replaceAll(_rgxJson, '.' + _settings.extension);
+
+    Map<String, dynamic> atlasJson = {};
     List<Image> images = [];
+    Map<Image, String> _img = {};
+    Map<Image, Image> _source = {};
 
     for (var input in inputs) {
       var i = decodeImage(await transform
@@ -47,8 +54,7 @@ class TextureAtlasTransformer extends AggregateTransformer {
 
       if (_settings.scale != null) {
         var w = (img.width * _settings.scale.x).toInt();
-        var h =
-            (img.width * (_settings.scale.y ?? _settings.scale.x)).toInt();
+        var h = (img.width * (_settings.scale.y ?? _settings.scale.x)).toInt();
         img = copyResize(img, w, h);
       } else if (_settings.resize != null) {
         img = copyResize(
@@ -56,6 +62,8 @@ class TextureAtlasTransformer extends AggregateTransformer {
       }
 
       images.add(img);
+      _img[img] = input.id.path;
+      _source[img] = i;
     }
 
     int width = 0, height = 0;
@@ -68,11 +76,31 @@ class TextureAtlasTransformer extends AggregateTransformer {
     var outputImage = new Image(width, height);
     int x = 0;
 
-    List<Map> cells = atlasJson['cells'] = [];
+    List<Map> frames = atlasJson['frames'] = [];
 
     for (var img in images) {
-      Map cellInfo = {'x': x, 'y': 0, 'w': img.width, 'h': img.height};
-      cells.add(cellInfo);
+      /*
+      {
+        "filename": "cactuar",
+        "frame": {"x":249,"y":205,"w":213,"h":159},
+        "rotated": false,
+        "trimmed": true,
+        "spriteSourceSize": {"x":0,"y":0,"w":213,"h":159},
+        "sourceSize": {"w":231,"h":175}
+      }
+       */
+      Map frameInfo = {'x': x, 'y': 0, 'w': img.width, 'h': img.height};
+      var src = _source[img];
+      Map frame = {
+        'frame': frameInfo,
+        'rotated': false,
+        'trimmed': false,
+        'filename': p.basenameWithoutExtension(_img[img]),
+        'spriteSourceSize': {'x': 0, 'y': 0, 'w': img.width, 'h': img.height},
+        'sourceSize': {'w': src.width, 'h': src.height}
+      };
+
+      frames.add(frame);
 
       copyInto(outputImage, img, dstX: x);
       x += img.width;
@@ -123,15 +151,29 @@ class TextureAtlasTransformer extends AggregateTransformer {
       });
     }
 
-    var outputPath = '${transform.key}.json';
-    if (_settings.outputDir != null)
-      outputPath = p.url.join(_settings.outputDir, outputPath);
+    /*
+    "meta": {
+      "app": "http://www.codeandweb.com/texturepacker ",
+      "version": "1.0",
+      "image": "atlas_array_trim.png",
+      "format": "RGBA8888",
+      "size": {"w":650,"h":497},
+      "scale": "1",
+      "smartupdate": "$TexturePacker:SmartUpdate:b6887183d8c9d806808577d524d4a2b9:1e240ffed241fc58aca26b0e5d350d80:71eda69c52f7d9873cb6f00d13e1e2f8$"
+    }
+     */
+    atlasJson['meta'] = {
+      'app': 'https://github.com/thosakwe/texture_atlas_transformer',
+      'version': '1.0.1',
+      'image': p.basename(imagePath),
+      'format': 'RGBA8888',
+      'size': {},
+      'scale': 1
+    };
 
     transform.addOutput(new Asset.fromString(
         new AssetId(transform.package, outputPath), JSON.encode(atlasJson)));
-    transform.addOutput(new Asset.fromBytes(
-        new AssetId(transform.package,
-            outputPath.replaceAll(_rgxJson, '.' + _settings.extension)),
-        buf));
+    transform.addOutput(
+        new Asset.fromBytes(new AssetId(transform.package, imagePath), buf));
   }
 }

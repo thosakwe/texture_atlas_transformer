@@ -10,11 +10,6 @@ transformers:
       scale: 0.125
       files:
         flying:
-          animations:
-            fly:
-              cells: all
-              loop: true
-              speed: 0.1
           frames:
             - "web/assets/green_flapper/Transparent PNG/flying/*.png"
 ```
@@ -31,8 +26,3 @@ instead of being scaled.
 ### Atlas Definitions
 * `frames`: A `List` of Strings representing files to be combined. Supports globbing.
 * `animations`: A `Map` of `String`s to animations.
-
-### Animations
-* `cells`: A String of cells to animate. Either `'all'` or an explicit (ex. `1,2,3`).
-* `loop`: A `bool`; defaults to `false`.
-* `speed`: A `double`; defaults to `1.0`.
